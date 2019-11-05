@@ -1,9 +1,8 @@
 package com.ainur;
 
-import com.ainur.Model.DisconnectMessage;
-import com.ainur.Model.Message;
-import com.ainur.Model.SignInMessage;
-import com.ainur.Model.SignUpMessage;
+import com.ainur.Model.*;
+import com.ainur.Model.responses.StatusResponse;
+import com.ainur.util.HttpStatus;
 import com.ainur.util.MessageType;
 import com.google.gson.Gson;
 
@@ -17,25 +16,25 @@ public class Client {
     static Gson gson;
     static BufferedWriter writer;
     static BufferedReader reader;
+    static String token;
 
     public static void main(String[] args) {
         gson = new Gson();
-        String token;
 
 
         try {
 
-            Socket clientSocket = new Socket("localhost", 8080);
+            Socket clientSocket = new Socket("localhost", 8000);
 
             writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
             reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             scanner = new Scanner(System.in);
-
+            System.out.println("Команды: signup = 0, signin = 1, disconnect = 4, publish = 2, subscribe = 3, createChannel = 5");
+            System.out.println("Введите команду:");
             int command = scanner.nextInt();
-            while (command >= 0) {
-                System.out.println("Команды: signup = 0, signin = 1, disconnect = 4, publish = 2, subscribe = 3, createChannel = 5");
-                System.out.println("Введите команду:");
 
+
+            while (command >= 0) {
 
                 switch (command) {
                     case MessageType.SIGN_UP: {
@@ -67,7 +66,10 @@ public class Client {
                     }
                 }
 
+                System.out.println("Команды: signup = 0, signin = 1, disconnect = 4, publish = 2, subscribe = 3, createChannel = 5");
+                System.out.println("Введите команду:");
                 command = scanner.nextInt();
+
             }
 
 
@@ -94,8 +96,13 @@ public class Client {
         try {
             writer.write(gson.toJson(message, Message.class) + "\n");
             writer.flush();
-
-            System.out.println(reader.readLine());
+            StatusResponse response = gson.fromJson(reader.readLine(), StatusResponse.class);
+            if (response.getStatusCode() == HttpStatus.FORBIDDEN)
+                System.out.println("ПОльзователь существует");
+            else if (response.getStatusCode() == HttpStatus.OK)
+                System.out.println("Регистрация прошла успешно");
+            if (response.getToken() != null)
+                token = response.getToken();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -121,8 +128,10 @@ public class Client {
         try {
             writer.write(gson.toJson(message, Message.class) + "\n");
             writer.flush();
-
-            System.out.println(reader.readLine());
+            StatusResponse response = gson.fromJson(reader.readLine(), StatusResponse.class);
+            if (response.getToken() != null)
+                token = response.getToken();
+            System.out.println(response.getStatusCode());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -130,17 +139,88 @@ public class Client {
 
     static void disconnect() {
 
+
+        Message message = new Message();
+        DisconnectMessage disconnectMessage = new DisconnectMessage();
+        disconnectMessage.setToken(token);
+
+        message.setCommand(MessageType.DISCONNECT);
+        message.setData(gson.toJson(disconnectMessage, DisconnectMessage.class));
+
+        try {
+            writer.write(gson.toJson(message, Message.class) + "\n");
+            writer.flush();
+            StatusResponse response = gson.fromJson(reader.readLine(), StatusResponse.class);
+            System.out.println(response.getStatusCode());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     static void publish() {
+        Message message = new Message();
+        PublishMessage publishMessage = new PublishMessage();
+        publishMessage.setToken(token);
+        System.out.println("Название канала:");
+        publishMessage.setChannelName(scanner.next());
+        System.out.println("Текст сообщения:");
+        publishMessage.setChannelName(scanner.next());
 
+        publishMessage.setDate();
+        message.setCommand(MessageType.PUBLISH);
+        message.setData(gson.toJson(publishMessage, PublishMessage.class));
+
+
+        try {
+            writer.write(gson.toJson(message, Message.class) + "\n");
+            writer.flush();
+            StatusResponse response = gson.fromJson(reader.readLine(), StatusResponse.class);
+            System.out.println(response.getStatusCode());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     static void subscribe() {
+        Message message = new Message();
+        SubscribeMessage subscribeMessage = new SubscribeMessage();
+        subscribeMessage.setToken(token);
+        System.out.println("Название канала:");
+        subscribeMessage.setChannelName(scanner.next());
 
+        message.setCommand(MessageType.SUBSCRIBE);
+        message.setData(gson.toJson(subscribeMessage, SubscribeMessage.class));
+
+        try {
+            writer.write(gson.toJson(message, Message.class) + "\n");
+            writer.flush();
+            StatusResponse response = gson.fromJson(reader.readLine(), StatusResponse.class);
+            System.out.println(response.getStatusCode());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     static void createChannel() {
+        Message message = new Message();
+
+        CreateChannelMessage channelMessage = new CreateChannelMessage();
+        channelMessage.setToken(token);
+        System.out.println("Название канала:");
+        channelMessage.setChannelName(scanner.next());
+
+        message.setCommand(MessageType.CREATE_CHANNEL);
+        message.setData(gson.toJson(channelMessage, CreateChannelMessage.class));
+
+        try {
+            writer.write(gson.toJson(message, Message.class) + "\n");
+            writer.flush();
+            StatusResponse response = gson.fromJson(reader.readLine(), StatusResponse.class);
+            System.out.println(response.getStatusCode());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 

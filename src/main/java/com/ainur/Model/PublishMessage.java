@@ -1,9 +1,22 @@
 package com.ainur.Model;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class PublishMessage {
     private String token;
-    private String chanel;
+    private String channelName;
     private String message;
+    private Date sendDate;
+
+
+    public Date getDate() {
+        return sendDate;
+    }
+
+    public void setDate() {
+        Date sendDate = new Date();
+    }
 
     public String getToken() {
         return token;
@@ -13,12 +26,12 @@ public class PublishMessage {
         this.token = token;
     }
 
-    public String getChanel() {
-        return chanel;
+    public String getChannelName() {
+        return channelName;
     }
 
-    public void setChanel(String chanel) {
-        this.chanel = chanel;
+    public void setChannelName(String channelName) {
+        this.channelName = channelName;
     }
 
     public String getMessage() {
